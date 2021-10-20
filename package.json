@@ -1,0 +1,28 @@
+{
+  "name": "rex",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ENvironmentSet/ReX.git"
+  },
+  "author": "ENvironmentSet",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ENvironmentSet/ReX/issues"
+  },
+  "homepage": "https://github.com/ENvironmentSet/ReX#readme",
+  "devDependencies": {
+    "@types/jest": "^26.0.24",
+    "jest": "^27.0.6",
+    "ts-jest": "^27.0.3",
+    "typescript": "^4.3.5"
+  },
+  "dependencies": {
+    "fp-ts": "^2.11.5",
+    "parser-ts": "^0.6.15"
+  }
+}
