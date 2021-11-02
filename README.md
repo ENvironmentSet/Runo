@@ -1,2 +1,2 @@
-# ReX
-ReX is a system for functional reactive programming
+# Rduino
+Rduino is Reactive DSL to program Arduino uno.
