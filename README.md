@@ -1,2 +1,2 @@
-# Rduino
-Rduino is Reactive DSL to program Arduino uno.
+# Runo
+Runo is Reactive DSL to program Arduino uno.
