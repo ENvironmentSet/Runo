@@ -1,0 +1,20 @@
+space = `unicode space character`
+number = (1 | ... | 9) { 0 | ... | 9 }
+text = " { `any unicode character` } "
+tuple_element = expression | identifier = expression
+tuple = \(\) | \(tuple_element{, tuple_element}\)
+function = \\identifier{space identifier} -> expression
+literal = number | text  | tuple | function
+function_application = identifier expression {expression}
+term_definition = Term constant_case_identifier | Term constant_case_identifier identifier{space identifier}
+identifier = `alphabet character` { `alphabet character` | `any digit` }
+constant_case_identifier = `Uppercase alphabet character` { `alphabet character` | `any digit` }
+pattern_match_case = constant_case_identifier -> expression | constant_case_identifier identifier{space identifier} -> expression
+pattern_match = `match` expression with { pattern_match_case }
+if_then_else = `if` expression `then` expression `else` expression
+expression = literal | selector | pattern_match | if_then_else | function_application | (expression)
+comment = // { `any unicode character` }
+selector = (identifier | .identifier | #identifier | [identifier=expression]) {selector} {, selector}
+binding = identifier : (expression | flow)
+flow = [selector] `{` { function_application } `}` [selector]
+statement = comment | flow | term_definition | binding
