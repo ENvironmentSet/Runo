@@ -1,6 +1,6 @@
 space = `unicode space character`
 number = (1 | ... | 9) { 0 | ... | 9 }
-text = " { `any unicode character` } "
+text = ' { `any unicode character` } '
 tuple_element = expression | identifier = expression
 tuple = \(\) | \(tuple_element{, tuple_element}\)
 function = \\identifier{space identifier} -> expression
@@ -18,3 +18,4 @@ selector = (identifier | .identifier | #identifier | [identifier=expression]) {s
 binding = identifier : (expression | flow)
 flow = [selector] `{` { function_application } `}` [selector]
 statement = comment | flow | term_definition | binding
+program = { statement }
