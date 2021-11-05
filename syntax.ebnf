@@ -5,7 +5,7 @@ tuple_element = expression | identifier = expression
 tuple = \(\) | \(tuple_element{, tuple_element}\)
 function = \\identifier{space identifier} -> expression
 literal = number | text  | tuple | function
-function_application = identifier expression {expression}
+function_application = expression expression {expression}
 term_definition = Term constant_case_identifier | Term constant_case_identifier identifier{space identifier}
 identifier = `alphabet character` { `alphabet character` | `any digit` }
 constant_case_identifier = `Uppercase alphabet character` { `alphabet character` | `any digit` }
