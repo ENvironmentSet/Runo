@@ -7,13 +7,13 @@ export type RunoIdentifier = string;
 
 export type RunoNumber = string;
 export type RunoText = string;
-type RunoTupleElement = { name: Option<RunoIdentifier>, expression: RunoExpression };
+export type RunoTupleElement = { name: Option<RunoIdentifier>, expression: RunoExpression };
 export type RunoTuple = RunoTupleElement[];
-export type RunoFunction = { parameters: NonEmptyArray<RunoIdentifier>, body: RunoExpression };
-export type RunoLiteral = RunoNumber | RunoText | RunoTuple | RunoFunction;
+export type RunoLambda = { parameters: NonEmptyArray<RunoIdentifier>, body: RunoExpression };
+export type RunoLiteral = RunoNumber | RunoText | RunoTuple | RunoLambda;
 
 export type RunoFunctionApplication = { head: RunoExpression, arguments: NonEmptyArray<RunoExpression> };
-type RunoPatternMatchCase = { name: RunoIdentifier, parameters: RunoIdentifier[], body: RunoExpression };
+export type RunoPatternMatchCase = { name: RunoIdentifier, parameters: RunoIdentifier[], body: RunoExpression };
 export type RunoPatternMatch = { target: RunoExpression, cases: RunoPatternMatchCase[] };
 export type RunoIfThenElse = { condition: RunoExpression, then: RunoExpression, else: RunoExpression };
 export type RunoExpression = RunoLiteral | RunoSelector | RunoFunctionApplication | RunoPatternMatch | RunoIfThenElse;

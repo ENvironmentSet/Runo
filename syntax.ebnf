@@ -3,8 +3,8 @@ number = (1 | ... | 9) { 0 | ... | 9 }
 text = ' { `any unicode character` } '
 tuple_element = expression | identifier = expression
 tuple = \(\) | \(tuple_element{, tuple_element}\)
-function = \\identifier{space identifier} -> expression
-literal = number | text  | tuple | function
+lambda = \\identifier{space identifier} -> expression
+literal = number | text  | tuple | lambda
 function_application = expression expression {expression}
 term_definition = Term constant_case_identifier | Term constant_case_identifier identifier{space identifier}
 identifier = `alphabet character` { `alphabet character` | `any digit` }
