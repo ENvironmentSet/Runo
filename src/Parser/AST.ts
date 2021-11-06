@@ -13,7 +13,7 @@ export type RunoLambda = { parameters: NonEmptyArray<RunoIdentifier>, body: Runo
 export type RunoLiteral = RunoNumber | RunoText | RunoTuple | RunoLambda;
 
 export type RunoFunctionApplication = { head: RunoExpression, arguments: NonEmptyArray<RunoExpression> };
-export type RunoPatternMatchCase = { name: RunoIdentifier, parameters: RunoIdentifier[], body: RunoExpression };
+export type RunoPatternMatchCase = { name: RunoIdentifier, parameters: RunoIdentifier[], body: RunoExpression }; //@TODO: Deep pattern match
 export type RunoPatternMatch = { target: RunoExpression, cases: RunoPatternMatchCase[] };
 export type RunoIfThenElse = { condition: RunoExpression, then: RunoExpression, else: RunoExpression };
 export type RunoExpression = RunoLiteral | RunoSelector | RunoFunctionApplication | RunoPatternMatch | RunoIfThenElse;
@@ -24,10 +24,10 @@ export enum RunoSelectorKind {
   ATTRIBUTE
 }
 export type RunoSelector
-  = { kind: RunoSelectorKind.ID | RunoSelectorKind.CLASS, identifier: RunoIdentifier, and?: RunoSelector }
-  | { kind: RunoSelectorKind.ATTRIBUTE, key: RunoIdentifier, value: RunoExpression, and?: RunoSelector };
+  = { kind: RunoSelectorKind.ID | RunoSelectorKind.CLASS, identifier: RunoIdentifier, and: Option<RunoSelector> }
+  | { kind: RunoSelectorKind.ATTRIBUTE, key: RunoIdentifier, value: RunoExpression, and: Option<RunoSelector> };
 
-export type RunoBind = { identifier: RunoIdentifier, object: RunoExpression };
+export type RunoBind = { identifier: RunoIdentifier, object: RunoExpression | RunoFlow };
 export type RunoFlow = { source: RunoSelector, operations: RunoFunctionApplication[], destination: RunoSelector }
 export type RunoTermDefinition = { name: RunoIdentifier, parameters: RunoIdentifier[] };
 
