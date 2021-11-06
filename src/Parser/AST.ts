@@ -28,7 +28,7 @@ export type RunoSelector
   | { kind: RunoSelectorKind.ATTRIBUTE, key: RunoIdentifier, value: RunoExpression, and: Option<RunoSelector> };
 
 export type RunoBind = { identifier: RunoIdentifier, object: RunoExpression | RunoFlow };
-export type RunoFlow = { source: RunoSelector, operations: RunoFunctionApplication[], destination: RunoSelector }
+export type RunoFlow = { source: Option<RunoSelector>, operations: RunoFunctionApplication[], destination: Option<RunoSelector> }
 export type RunoTermDefinition = { name: RunoIdentifier, parameters: RunoIdentifier[] };
 
 export type RunoStatement = RunoBind | RunoFlow | RunoTermDefinition;

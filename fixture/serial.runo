@@ -1,1 +1,1 @@
-pin[digital=true] { map 'Hello, World!' } print[device=serial]
+pin[digital=true] { map 'Hello, World!'. } print[device=serial]
