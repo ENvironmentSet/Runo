@@ -166,7 +166,12 @@ const idSelector: Parser<Char, RunoSelector> = pipe(
     constant(
       pipe(
         char('#'),
-        and(identifier)
+        and(
+          either(
+            identifier,
+            constant(number)
+          )
+        )
       )
     )
   ),

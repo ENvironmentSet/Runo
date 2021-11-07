@@ -14,7 +14,7 @@ pattern_match = `match` expression with { pattern_match_case }
 if_then_else = `if` expression `then` expression `else` expression
 expression = literal | selector | pattern_match | if_then_else | function_application | (expression)
 comment = // { `any unicode character` }
-selector = (identifier | .identifier | #identifier | [identifier=expression]){selector}
+selector = (identifier | .identifier | #(identifier | number) | [identifier=expression]){selector}
 binding = identifier : (expression | flow)
 flow = [selector] `{` { function_application `;` } `}` [selector]
 statement = comment | flow | term_definition | binding
