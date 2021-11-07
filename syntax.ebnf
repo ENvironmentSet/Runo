@@ -16,6 +16,6 @@ expression = literal | selector | pattern_match | if_then_else | function_applic
 comment = // { `any unicode character` }
 selector = (identifier | .identifier | #identifier | [identifier=expression]){selector}
 binding = identifier : (expression | flow)
-flow = [selector] `{` { function_application } `}` [selector]
+flow = [selector] `{` { function_application `;` } `}` [selector]
 statement = comment | flow | term_definition | binding
 program = { statement }

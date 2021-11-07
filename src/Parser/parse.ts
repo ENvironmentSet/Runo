@@ -163,7 +163,7 @@ const idSelector: Parser<Char, RunoSelector> = pipe(
     constant(
       pipe(
         char('#'),
-        and(withTrim(identifier))
+        and(identifier)
       )
     )
   ),
@@ -173,7 +173,7 @@ const idSelector: Parser<Char, RunoSelector> = pipe(
 );
 const classSelector: Parser<Char, RunoSelector> = pipe(
   char('.'),
-  bind('identifier', constant(withTrim(identifier))),
+  bind('identifier', constant(identifier)),
   bind('and', constant(optional(selector))),
   map(({ identifier, and }) => ({ kind: RunoSelectorKind.CLASS, identifier, and }))
 );
@@ -243,7 +243,7 @@ function nonCirculativeExpression(i: Stream<Char>): ParseResult<Char, RunoExpres
 const flow: Parser<Char, RunoFlow> = pipe(
   optional(selector),
   bindTo('source'),
-  bind('operations', constant(withTrim(between(char('{'), withTrim(char('}')))(many(pipe(withTrim(application), andFirst(withTrim(char('.'))))))))),
+  bind('operations', constant(withTrim(between(char('{'), withTrim(char('}')))(many(pipe(withTrim(application), andFirst(withTrim(char(';'))))))))),
   bind('destination', constant(optional(withTrim(selector)))),
   map(({ source, operations, destination }) => ({ source, operations, destination }))
 );
