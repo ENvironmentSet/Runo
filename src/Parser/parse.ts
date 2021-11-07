@@ -60,14 +60,17 @@ const identifier: Parser<Char, RunoIdentifier> = pipe(
   ),
 );
 
-const number: Parser<Char, RunoNumber> = pipe(
-  oneOf('123456789'),
-  chain(head =>
-    pipe(
-      many(digit),
-      map(digits => [head, ...digits].join('')),
+const number: Parser<Char, RunoNumber> = either(
+  pipe(
+    oneOf('123456789'),
+    chain(head =>
+      pipe(
+        many(digit),
+        map(digits => [head, ...digits].join('')),
+      )
     )
-  )
+  ),
+  constant(char('0'))
 );
 
 const text: Parser<Char, RunoText> = pipe(
