@@ -1,21 +1,41 @@
 import { Cell } from 'sodiumjs';
 import { RunoValue, equals } from './Value';
 
-type SelectorConstructorParameters = {
-  id?: string;
-  metadataConditions: [string, RunoValue][] & [[string, RunoValue]];
-} | {
-  id: string;
-  metadataConditions: [string, RunoValue][];
+export abstract class Selector {
+  associatedSelector?: Selector;
+
+  protected constructor(associatedSelector?: Selector) {
+    this.associatedSelector = associatedSelector;
+  }
+
+  abstract check(id: string, binding: Binding): boolean;
 }
 
-export class Selector {
-  id?: string;
-  metadataConditions: [string, RunoValue][];
+export class IdSelector extends Selector {
+  id: string;
 
-  constructor({ id, metadataConditions }: SelectorConstructorParameters) {
+  constructor(id: string, associatedSelector?: Selector) {
+    super(associatedSelector);
     this.id = id;
-    this.metadataConditions = metadataConditions;
+  }
+
+  check(id: string, binding: Binding): boolean {
+    return this.id === id && (this.associatedSelector ? this.associatedSelector.check(id, binding) : true);
+  }
+}
+
+export class MetaPropertySelector extends Selector {
+  metaPropKey: string;
+  metaPropValue: RunoValue;
+
+  constructor(metaPropKey: string, metaPropValue: RunoValue, associatedSelector?: Selector) {
+    super(associatedSelector);
+    this.metaPropKey = metaPropKey;
+    this.metaPropValue = metaPropValue;
+  }
+
+  check(id: string, binding: Binding): boolean {
+    return Reflect.has(binding.meta, this.metaPropKey) && equals(this.metaPropValue, binding.meta[this.metaPropKey]) && (this.associatedSelector ? this.associatedSelector.check(id, binding) : true);
   }
 }
 
@@ -27,10 +47,6 @@ export class Binding {
     this.value = value;
     this.meta = meta;
   }
-
-  checkSelector({ metadataConditions }: Selector): boolean {
-    return metadataConditions.every(([key, value]) => equals(this.meta[key], value));
-  }
 }
 
 export class Environment$ extends Cell<Map<string, Binding>> {
@@ -38,11 +54,9 @@ export class Environment$ extends Cell<Map<string, Binding>> {
     super(new Map(Object.entries(initEnv)));
   }
 
-  static select(environment$: Environment$, selector: Selector): Cell<Binding[]> {
+  static select(environment$: Environment$, selector: Selector): Cell<RunoValue[]> {
     return environment$.map(env => {
-      if (!selector.id && env.get(selector.id!)?.checkSelector(selector)) {
-        return [env.get(selector.id!)!];
-      } else return [...env.values()].filter(binding => binding.checkSelector(selector));
+      return [...env.entries()].filter(([id, binding]) => selector.check(id, binding)).map(([_, binding]) => binding.value);
     });
   }
 
