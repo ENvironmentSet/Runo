@@ -1,5 +1,8 @@
 import { Cell, Stream } from 'sodiumjs';
 import { BigNumber } from 'bignumber.js';
+import { Environment$ } from './Environment';
+import { NonEmptyArray } from 'fp-ts/NonEmptyArray';
+import { RunoExpression, RunoIdentifier } from '../Parser/AST';
 
 const RunoTupleTag: unique symbol = Symbol('@RunoTupleTag');
 
@@ -9,7 +12,20 @@ export type RunoBool = boolean;
 export interface RunoTuple extends Record<string, RunoValue> {
   [RunoTupleTag]: typeof RunoTupleTag
 }
-export class RunoFunction {}
+export class RunoFunction {
+  env$: Environment$;
+  parameters: NonEmptyArray<RunoIdentifier>;
+  body: RunoExpression;
+
+
+  constructor(env$: Environment$, parameters: NonEmptyArray<RunoIdentifier>, body: RunoExpression) {
+    this.env$ = env$;
+    this.parameters = parameters;
+    this.body = body;
+  }
+
+  call(arguments: RunoValue[]): Cell<RunoValue> {}
+}
 export type RunoEvent = Stream<RunoValue>;
 export type RunoObservable = Cell<RunoValue>;
 export type RunoValue = RunoNumber | RunoText | RunoBool | RunoTuple | RunoFunction | RunoEvent | RunoObservable;
