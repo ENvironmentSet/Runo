@@ -16,7 +16,8 @@ import {
 } from 'parser-ts/Parser';
 import {
   RunoBind,
-  RunoExpression, RunoFlow,
+  RunoExpression,
+  RunoFlow,
   RunoFunctionApplication,
   RunoIdentifier,
   RunoIfThenElse,
@@ -24,9 +25,12 @@ import {
   RunoLiteral,
   RunoNumber,
   RunoPatternMatch,
-  RunoPatternMatchCase, RunoProgram,
+  RunoPatternMatchCase,
+  RunoProgram,
   RunoSelector,
-  RunoSelectorKind, RunoStatement, RunoTermDefinition,
+  RunoSelectorKind,
+  RunoStatement,
+  RunoTermDefinition,
   RunoText,
   RunoTuple,
   RunoTupleElement
@@ -60,48 +64,55 @@ const identifier: Parser<Char, RunoIdentifier> = pipe(
   ),
 );
 
-const number: Parser<Char, RunoNumber> = either(
-  pipe(
-    oneOf('123456789'),
-    chain(head =>
-      pipe(
-        many(digit),
-        map(digits => [head, ...digits].join('')),
+const number: Parser<Char, RunoNumber> = pipe(
+  either(
+    pipe(
+      oneOf('123456789'),
+      chain(head =>
+        pipe(
+          many(digit),
+          map(digits => [head, ...digits].join('')),
+        )
       )
-    )
+    ),
+    constant(char('0'))
   ),
-  constant(char('0'))
+  map(RunoNumber)
 );
 
 const text: Parser<Char, RunoText> = pipe(
   surroundedBy(char('\''))(many(notOneOf('\''))), //@TODO: escaping.
-  map(chars => chars.join(''))
+  map(chars => chars.join('')),
+  map(RunoText)
 );
 
 const tupleElement: Parser<Char, RunoTupleElement> = pipe(
   either(
     pipe(
       expression,
-      map(expression => ({ name: none, expression })),
+      map(expression => RunoTupleElement(none, expression)),
     ),
     constant(pipe(
       optional(identifier),
       bindTo('identifier'),
       andFirst(char('=')),
       bind('expression', constant(expression)),
-      map(({ identifier: name, expression }) => ({ name, expression }))
+      map(({ identifier: name, expression }) => RunoTupleElement(name, expression))
     ))
   )
 );
 const tuple: Parser<Char, RunoTuple>
-  = between(char('('), char(')'))(sepBy(withTrim(char(',')), withTrim(tupleElement)));
+  = pipe(
+  between(char('('), char(')'))(sepBy(withTrim(char(',')), withTrim(tupleElement))),
+  map(RunoTuple)
+);
 
 const lambda: Parser<Char, RunoLambda> = pipe(
   char('\\'),
   bind('parameters', constant(many1(withTrim(identifier)))),
   andFirst(withTrim(string('->'))),
   bind('expression', constant(withTrim(expression))),
-  map(({ parameters, expression: body }) => ({ parameters, body }))
+  map(({ parameters, expression: body }) => RunoLambda(parameters, body))
 );
 
 const literal: Parser<Char, RunoLiteral> = either(
@@ -123,7 +134,7 @@ const application: Parser<Char, RunoFunctionApplication> = pipe(
   nonCirculativeExpression,
   bindTo('head'),
   bind('args', constant(withTrim(sepBy1(spaces, nonCirculativeExpression)))),
-  map(({ head, args }) => ({ head, arguments: args }))
+  map(({ head, args }) => RunoFunctionApplication(head, args))
 );
 
 const constantCaseIdentifier: Parser<Char, RunoIdentifier> = pipe(
@@ -141,13 +152,13 @@ const patternMatchCase: Parser<Char, RunoPatternMatchCase> = pipe(
   bind('parameters', constant(withTrim(sepBy(spaces, identifier)))),
   andFirst(withTrim(string('->'))),
   bind('body', constant(withTrim(expression))),
-  map(({ name, parameters, body }) => ({ name, parameters, body }))
+  map(({ name, parameters, body }) => RunoPatternMatchCase(name, parameters, body))
 );
 const patternMatch: Parser<Char, RunoPatternMatch> = pipe(
   string('match'),
   bind('target', constant(withTrim(expression))),
   bind('cases', constant(many(patternMatchCase))),
-  map(({ target, cases }) => ({ target, cases }))
+  map(({ target, cases }) => RunoPatternMatch(target, cases))
 );
 
 const ifThenElse: Parser<Char, RunoIfThenElse> = pipe(
@@ -157,7 +168,7 @@ const ifThenElse: Parser<Char, RunoIfThenElse> = pipe(
   bind('then', constant(withTrim(expression))),
   andFirst(withTrim(string('else'))),
   bind('else', constant(withTrim(expression))),
-  map(({ condition, then, else: _ }) => ({ condition, then, else: _ })),
+  map(({ condition, then, else: _ }) => RunoIfThenElse(condition, then, _)),
 );
 
 const idSelector: Parser<Char, RunoSelector> = pipe(
@@ -169,7 +180,10 @@ const idSelector: Parser<Char, RunoSelector> = pipe(
         and(
           either(
             identifier,
-            constant(number)
+            constant(pipe(
+              number,
+              map(({ code }) => code)
+            ))
           )
         )
       )
@@ -177,13 +191,13 @@ const idSelector: Parser<Char, RunoSelector> = pipe(
   ),
   bindTo('identifier'),
   bind('and', constant(optional(selector))),
-  map(({ identifier, and }) => ({ kind: RunoSelectorKind.ID, identifier, and }))
+  map(({ identifier, and }) => RunoSelector(RunoSelectorKind.ID, identifier, and))
 );
 const classSelector: Parser<Char, RunoSelector> = pipe(
   char('.'),
   bind('identifier', constant(identifier)),
   bind('and', constant(optional(selector))),
-  map(({ identifier, and }) => ({ kind: RunoSelectorKind.CLASS, identifier, and }))
+  map(({ identifier, and }) => RunoSelector(RunoSelectorKind.CLASS, identifier, and))
 );
 const attributeSelector: Parser<Char, RunoSelector> = between(char('['), char(']'))(pipe(
   withTrim(identifier),
@@ -191,7 +205,7 @@ const attributeSelector: Parser<Char, RunoSelector> = between(char('['), char(']
   andFirst(withTrim(char('='))),
   bind('value', constant(withTrim(expression))),
   bind('and', constant(optional(selector))),
-  map(({ key, value, and }) => ({ kind: RunoSelectorKind.ATTRIBUTE, key, value, and }))
+  map(({ key, value, and }) => RunoSelector(RunoSelectorKind.ATTRIBUTE, key, value, and))
 ));
 
 function selector(i: Stream<Char>): ParseResult<Char, RunoSelector> {
@@ -253,7 +267,7 @@ const flow: Parser<Char, RunoFlow> = pipe(
   bindTo('source'),
   bind('operations', constant(withTrim(between(char('{'), withTrim(char('}')))(many(pipe(withTrim(application), andFirst(withTrim(char(';'))))))))),
   bind('destination', constant(optional(withTrim(selector)))),
-  map(({ source, operations, destination }) => ({ source, operations, destination }))
+  map(({ source, operations, destination }) => RunoFlow(source, operations, destination))
 );
 
 const binding: Parser<Char, RunoBind> = pipe(
@@ -261,14 +275,14 @@ const binding: Parser<Char, RunoBind> = pipe(
   bindTo('identifier'),
   andFirst(withTrim(char(':'))),
   bind('object', constant(withTrim(either<Char, RunoExpression | RunoFlow>(expression, constant(flow))))),
-  map(({ identifier, object }) => ({ identifier, object }))
+  map(({ identifier, object }) => RunoBind(identifier, object))
 );
 
 const termDefinition: Parser<Char, RunoTermDefinition> = pipe(
   string('Term'),
   bind('name', constant(withTrim(constantCaseIdentifier))),
   bind('parameters', constant(sepBy(spaces, identifier))),
-  map(({ name, parameters }) => ({ name, parameters }))
+  map(({ name, parameters }) => RunoTermDefinition(name, parameters))
 );
 
 const statement: Parser<Char, RunoStatement> = either(
@@ -284,4 +298,3 @@ export const parse: Parser<Char, RunoProgram> = many(withTrim(statement));
 
 // every parser assume that it's forward spaces are removed
 // \x -> \y -> x y (lambda is right-assoc)
-// 모호한 문법 handle.
