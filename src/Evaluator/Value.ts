@@ -1,6 +1,7 @@
 import { Cell, Stream } from 'sodiumjs';
+import { BigNumber } from 'bignumber.js';
 
-export type RunoNumber = number; //@TODO: use bigfloat module.
+export type RunoNumber = BigNumber;
 export type RunoText = string;
 export type RunoBool = boolean;
 export interface RunoTuple extends Record<string, RunoValue> {}
