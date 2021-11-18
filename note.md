@@ -152,3 +152,5 @@ C-Style.
 more literals, primitive math operators.
 type system.
 or selector.
+error handling
+tuple pattern match syntax
