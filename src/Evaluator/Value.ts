@@ -1,8 +1,10 @@
 import { Cell, Stream } from 'sodiumjs';
 import { BigNumber } from 'bignumber.js';
+import { NonEmptyArray } from 'fp-ts/NonEmptyArray';
 
 const RunoTupleTag: unique symbol = Symbol('@RunoTupleTag');
 const RunoCustomValueTag: unique symbol = Symbol('@RunoCustomValueTag');
+const RunoErrorTag: unique symbol = Symbol('@RunoErrorTag');
 
 export type RunoNumber = BigNumber;
 export type RunoText = string;
@@ -16,6 +18,9 @@ export class RunoConstructor {}
 export type RunoEvent = Stream<RunoValue>;
 export type RunoObservable = Cell<RunoValue>;
 export type RunoValue = RunoNumber | RunoText | RunoBool | RunoTuple | RunoFunction | RunoConstructor | RunoEvent | RunoObservable | RunoCustomValue;
+export type RunoValues = NonEmptyArray<RunoValue>;
+export type RunoError = { [RunoErrorTag]: typeof RunoErrorTag, message?: string; }
+export type RunoEvalResult = RunoValue | RunoValues | RunoError;
 
 export function createTuple(values: Record<string, RunoValue>): RunoTuple {
   const newTuple = {
@@ -32,6 +37,17 @@ export function isRunoTuple(x: RunoValue): x is RunoTuple {
 
 export function isRunoCustomValue(x: RunoValue): x is RunoCustomValue {
   return typeof x === 'object' && Reflect.has(x, RunoCustomValueTag);
+}
+
+export function createError(message: string): RunoError {
+  return {
+    [RunoErrorTag]: RunoErrorTag,
+    message
+  };
+}
+
+export function isRunoError(x: RunoEvalResult): x is RunoError {
+  return typeof x === 'object' && Reflect.has(x, RunoErrorTag);
 }
 
 export function equals(x: RunoValue, y: RunoValue): boolean {
