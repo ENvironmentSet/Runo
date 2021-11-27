@@ -1,5 +1,5 @@
-import { Cell } from 'sodiumjs';
 import { RunoValue, equals } from './Value';
+import { createError, RunoEvalResult } from './Runtime';
 
 export abstract class Selector {
   associatedSelector?: Selector;
@@ -8,7 +8,11 @@ export abstract class Selector {
     this.associatedSelector = associatedSelector;
   }
 
-  abstract check(id: string, binding: Binding): boolean;
+  delegateCheck(binding: Binding) {
+    return this.associatedSelector ? this.associatedSelector.check(binding) : true;
+  }
+
+  abstract check(binding: Binding): boolean;
 }
 
 export class IdSelector extends Selector {
@@ -19,8 +23,8 @@ export class IdSelector extends Selector {
     this.id = id;
   }
 
-  check(id: string, binding: Binding): boolean {
-    return this.id === id && (this.associatedSelector ? this.associatedSelector.check(id, binding) : true);
+  check(binding: Binding): boolean {
+    return this.id === binding.id && this.delegateCheck(binding);
   }
 }
 
@@ -34,37 +38,55 @@ export class MetaPropertySelector extends Selector {
     this.metaPropValue = metaPropValue;
   }
 
-  check(id: string, binding: Binding): boolean {
-    return Reflect.has(binding.meta, this.metaPropKey) && equals(this.metaPropValue, binding.meta[this.metaPropKey]) && (this.associatedSelector ? this.associatedSelector.check(id, binding) : true);
+  check(binding: Binding): boolean {
+    return Reflect.has(binding.meta, this.metaPropKey) &&
+           equals(this.metaPropValue, binding.meta[this.metaPropKey]) &&
+           this.delegateCheck(binding);
   }
 }
 
 export class Binding {
+  id: string;
   value: RunoValue;
   meta: Record<string, RunoValue>;
 
-  constructor(value: RunoValue, meta: Record<string, RunoValue> = {}) {
+  constructor(id: string, value: RunoValue, meta: Record<string, RunoValue> = {}) {
+    this.id = id;
     this.value = value;
     this.meta = meta;
   }
 }
 
-export class Environment$ extends Cell<Map<string, Binding>> {
-  constructor(initEnv: Record<string, Binding>) {
-    super(new Map(Object.entries(initEnv)));
+export class Environment {
+  bindings: Map<string, Binding>;
+  parent?: Environment;
+
+  constructor(bindings: Record<string, Binding>, parent?: Environment) {
+    this.bindings = new Map(Object.entries(bindings));
+    this.parent = parent;
   }
 
-  static select(environment$: Environment$, selector: Selector): Cell<RunoValue[]> {
-    return environment$.map(env => {
-      return [...env.entries()].filter(([id, binding]) => selector.check(id, binding)).map(([_, binding]) => binding.value);
-    });
+  addBinding(binding: Binding) {
+    this.bindings.set(binding.id, binding);
   }
 
-  static addBinding(environment$: Environment$, key: string, value: RunoValue): Environment$ {
-    return environment$.map(env => env.set(key, new Binding(value)));
+  resolveOwnBinding(selector: Selector): RunoValue[] {
+    return [...this.bindings.values()].filter(binding => selector.check(binding));
   }
 
-  static extend(base$: Environment$, initEnv: Record<string, Binding>): Environment$ {
-    return base$.map(env => new Map([...env.entries(), ...Object.entries(initEnv)]));
+  resolve(selector: Selector): RunoEvalResult {
+    const ownBindings = this.resolveOwnBinding(selector);
+    let parent = this.parent;
+    let inheritedBindings = [];
+
+    while (parent) {
+      inheritedBindings.push(...parent.resolveOwnBinding(selector));
+      parent = parent.parent;
+    }
+
+    const result = ownBindings.concat(inheritedBindings);
+
+    if (result.length === 0) return [createError('Nothings were selected by selector')];
+    else return result as RunoEvalResult;
   }
 }
