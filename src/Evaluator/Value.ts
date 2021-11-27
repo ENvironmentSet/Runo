@@ -32,6 +32,13 @@ export class RunoConstructor {}
 export function isRunoCustomValue(x: RunoValue): x is RunoCustomValue {
   return typeof x === 'object' && Reflect.has(x, RunoCustomValueTag);
 }
+export function createCustomValue(tag: string, args: RunoValue[]): RunoCustomValue {
+  return {
+    [RunoCustomValueTag]: RunoCustomValueTag,
+    tag,
+    args
+  };
+}
 
 export type RunoEvent = Stream<RunoValue>;
 
