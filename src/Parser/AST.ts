@@ -3,7 +3,8 @@
 import { NonEmptyArray } from 'fp-ts/NonEmptyArray';
 import { Option } from 'fp-ts/Option';
 
-export type RunoIdentifier = string;
+export type RunoName = string;
+export type RunoReference = { type: 'RunoReference', name: RunoName };
 
 export type RunoNumber = { type: 'RunoNumber', code: string };
 export function RunoNumber(code: string): RunoNumber {
@@ -13,16 +14,16 @@ export type RunoText = { type: 'RunoText', code: string };
 export function RunoText(code: string): RunoText {
   return { type: 'RunoText', code };
 }
-export type RunoTupleElement = { type: 'RunoTupleElement', name: Option<RunoIdentifier>, expression: RunoExpression };
-export function RunoTupleElement(name: Option<RunoIdentifier>, expression: RunoExpression): RunoTupleElement {
+export type RunoTupleElement = { type: 'RunoTupleElement', name: Option<RunoName>, expression: RunoExpression };
+export function RunoTupleElement(name: Option<RunoName>, expression: RunoExpression): RunoTupleElement {
   return { type: 'RunoTupleElement', name, expression };
 }
 export type RunoTuple = { type: 'RunoTuple', elements: RunoTupleElement[] };
 export function RunoTuple(elements: RunoTupleElement[]): RunoTuple {
   return { type: 'RunoTuple', elements };
 }
-export type RunoLambda = { type: 'RunoLambda', parameters: NonEmptyArray<RunoIdentifier>, body: RunoExpression };
-export function RunoLambda(parameters: NonEmptyArray<RunoIdentifier>, body: RunoExpression): RunoLambda {
+export type RunoLambda = { type: 'RunoLambda', parameters: NonEmptyArray<RunoName>, body: RunoExpression };
+export function RunoLambda(parameters: NonEmptyArray<RunoName>, body: RunoExpression): RunoLambda {
   return { type: 'RunoLambda', parameters, body };
 }
 export type RunoLiteral = RunoNumber | RunoText | RunoTuple | RunoLambda;
@@ -31,8 +32,8 @@ export type RunoFunctionApplication = { type: 'RunoFunctionApplication', head: R
 export function RunoFunctionApplication(head: RunoExpression, args: NonEmptyArray<RunoExpression>): RunoFunctionApplication {
   return { type: 'RunoFunctionApplication', head, arguments: args };
 }
-export type RunoPatternMatchCase = { type: 'RunoPatternMatchCase', name: RunoIdentifier, parameters: RunoIdentifier[], body: RunoExpression }; //@TODO: Deep pattern match
-export function RunoPatternMatchCase(name: RunoIdentifier, parameters: RunoIdentifier[], body: RunoExpression): RunoPatternMatchCase {
+export type RunoPatternMatchCase = { type: 'RunoPatternMatchCase', name: RunoName, parameters: RunoName[], body: RunoExpression }; //@TODO: Deep pattern match
+export function RunoPatternMatchCase(name: RunoName, parameters: RunoName[], body: RunoExpression): RunoPatternMatchCase {
   return { type: 'RunoPatternMatchCase', name, parameters, body };
 }
 export type RunoPatternMatch = { type: 'RunoPatternMatch', target: RunoExpression, cases: RunoPatternMatchCase[] };
@@ -43,33 +44,18 @@ export type RunoIfThenElse = { type: 'RunoIfThenElse', condition: RunoExpression
 export function RunoIfThenElse(condition: RunoExpression, then: RunoExpression, else_: RunoExpression): RunoIfThenElse {
   return { type: 'RunoIfThenElse', condition, then, else: else_ };
 }
-export type RunoExpression = RunoLiteral | RunoSelector | RunoFunctionApplication | RunoPatternMatch | RunoIfThenElse;
+export type RunoExpression = RunoLiteral | RunoReference | RunoFunctionApplication | RunoPatternMatch | RunoIfThenElse;
 
-export enum RunoSelectorKind {
-  ID,
-  CLASS,
-  ATTRIBUTE
-}
-export type RunoSelector
-  = { type: 'RunoSelector', kind: RunoSelectorKind.ID | RunoSelectorKind.CLASS, identifier: RunoIdentifier, and: Option<RunoSelector> }
-  | { type: 'RunoSelector', kind: RunoSelectorKind.ATTRIBUTE, key: RunoIdentifier, value: RunoExpression, and: Option<RunoSelector> };
-export function RunoSelector(kind: RunoSelectorKind.ID | RunoSelectorKind.CLASS, identifier: RunoIdentifier, and: Option<RunoSelector>): RunoSelector;
-export function RunoSelector(kind: RunoSelectorKind.ATTRIBUTE, key: RunoIdentifier, value: RunoExpression, and: Option<RunoSelector>): RunoSelector;
-export function RunoSelector(kind: RunoSelectorKind, x: RunoIdentifier, y: any, z?: any): RunoSelector {
-  if (kind === RunoSelectorKind.ATTRIBUTE) return { type: 'RunoSelector', kind, key: x, value: y, and: z };
-  else return { type: 'RunoSelector', kind, identifier: x, and: y };
-}
-
-export type RunoBind = { type: 'RunoBind', identifier: RunoIdentifier, object: RunoExpression | RunoFlow };
-export function RunoBind(identifier: RunoIdentifier, object: RunoExpression | RunoFlow): RunoBind {
+export type RunoBind = { type: 'RunoBind', identifier: RunoName, object: RunoExpression | RunoFlow };
+export function RunoBind(identifier: RunoName, object: RunoExpression | RunoFlow): RunoBind {
   return { type: 'RunoBind', identifier, object };
 }
-export type RunoFlow = { type: 'RunoFlow', source: Option<RunoSelector>, operations: RunoFunctionApplication[], destination: Option<RunoSelector> }
-export function RunoFlow(source: Option<RunoSelector>, operations: RunoFunctionApplication[], destination: Option<RunoSelector>): RunoFlow {
+export type RunoFlow = { type: 'RunoFlow', source: Option<RunoReference>, operations: RunoFunctionApplication[], destination: Option<RunoReference> }
+export function RunoFlow(source: Option<RunoReference>, operations: RunoFunctionApplication[], destination: Option<RunoReference>): RunoFlow {
   return { type: 'RunoFlow', source, operations, destination };
 }
-export type RunoTermDefinition = { type: 'RunoTermDefinition', name: RunoIdentifier, parameters: RunoIdentifier[] };
-export function RunoTermDefinition(name: RunoIdentifier, parameters: RunoIdentifier[]): RunoTermDefinition {
+export type RunoTermDefinition = { type: 'RunoTermDefinition', name: RunoName, parameters: RunoName[] };
+export function RunoTermDefinition(name: RunoName, parameters: RunoName[]): RunoTermDefinition {
   return { type: 'RunoTermDefinition', name, parameters };
 }
 

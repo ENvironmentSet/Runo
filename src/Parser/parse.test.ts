@@ -5,11 +5,11 @@ import { isRight } from 'fp-ts/Either';
 describe('Tests for Parser', () => {
   test('T1', () => {
     const sampleSource: string = `
-      pin[digital=true] { map 'Hello, World!'; } print[device=serial]
-      
-      #9 {
-        filter isLow. map HIGH;
-      } #1
+      d9 { map 'Hello, World!'; } serialDevice
+
+      d9 {
+        filter isLow; map HIGH;
+      } d1
     `;
 
     const parseResult = run(parse, sampleSource);

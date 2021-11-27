@@ -19,7 +19,6 @@ import {
   RunoExpression,
   RunoFlow,
   RunoFunctionApplication,
-  RunoIdentifier,
   RunoIfThenElse,
   RunoLambda,
   RunoLiteral,
@@ -27,13 +26,13 @@ import {
   RunoPatternMatch,
   RunoPatternMatchCase,
   RunoProgram,
-  RunoSelector,
-  RunoSelectorKind,
   RunoStatement,
   RunoTermDefinition,
   RunoText,
   RunoTuple,
-  RunoTupleElement
+  RunoTupleElement,
+  RunoName,
+  RunoReference
 } from './AST';
 import { constant, pipe } from 'fp-ts/function';
 import { alphanum, Char, char, digit, lower, notOneOf, oneOf, upper } from 'parser-ts/char';
@@ -54,7 +53,7 @@ const alphabet: Parser<Char, Char> = either(
   lower,
   constant(upper)
 );
-const identifier: Parser<Char, RunoIdentifier> = pipe(
+const name: Parser<Char, RunoName> = pipe(
   alphabet,
   chain(head =>
       pipe(
@@ -62,6 +61,10 @@ const identifier: Parser<Char, RunoIdentifier> = pipe(
         map(chars => [head, ...chars].join(''))
       )
   ),
+);
+const reference: Parser<Char, RunoReference> = pipe(
+  name,
+  map(name => ({ type: 'RunoReference', name }))
 );
 
 const number: Parser<Char, RunoNumber> = pipe(
@@ -93,7 +96,7 @@ const tupleElement: Parser<Char, RunoTupleElement> = pipe(
       map(expression => RunoTupleElement(none, expression)),
     ),
     constant(pipe(
-      optional(identifier),
+      optional(name),
       bindTo('identifier'),
       andFirst(char('=')),
       bind('expression', constant(expression)),
@@ -109,7 +112,7 @@ const tuple: Parser<Char, RunoTuple>
 
 const lambda: Parser<Char, RunoLambda> = pipe(
   char('\\'),
-  bind('parameters', constant(many1(withTrim(identifier)))),
+  bind('parameters', constant(many1(withTrim(name)))),
   andFirst(withTrim(string('->'))),
   bind('expression', constant(withTrim(expression))),
   map(({ parameters, expression: body }) => RunoLambda(parameters, body))
@@ -137,7 +140,7 @@ const application: Parser<Char, RunoFunctionApplication> = pipe(
   map(({ head, args }) => RunoFunctionApplication(head, args))
 );
 
-const constantCaseIdentifier: Parser<Char, RunoIdentifier> = pipe(
+const constantCaseIdentifier: Parser<Char, RunoName> = pipe(
   upper,
   chain(head =>
     pipe(
@@ -149,7 +152,7 @@ const constantCaseIdentifier: Parser<Char, RunoIdentifier> = pipe(
 const patternMatchCase: Parser<Char, RunoPatternMatchCase> = pipe(
   constantCaseIdentifier,
   bindTo('name'),
-  bind('parameters', constant(withTrim(sepBy(spaces, identifier)))),
+  bind('parameters', constant(withTrim(sepBy(spaces, name)))),
   andFirst(withTrim(string('->'))),
   bind('body', constant(withTrim(expression))),
   map(({ name, parameters, body }) => RunoPatternMatchCase(name, parameters, body))
@@ -171,55 +174,6 @@ const ifThenElse: Parser<Char, RunoIfThenElse> = pipe(
   map(({ condition, then, else: _ }) => RunoIfThenElse(condition, then, _)),
 );
 
-const idSelector: Parser<Char, RunoSelector> = pipe(
-  either(
-    identifier,
-    constant(
-      pipe(
-        char('#'),
-        and(
-          either(
-            identifier,
-            constant(pipe(
-              number,
-              map(({ code }) => code)
-            ))
-          )
-        )
-      )
-    )
-  ),
-  bindTo('identifier'),
-  bind('and', constant(optional(selector))),
-  map(({ identifier, and }) => RunoSelector(RunoSelectorKind.ID, identifier, and))
-);
-const classSelector: Parser<Char, RunoSelector> = pipe(
-  char('.'),
-  bind('identifier', constant(identifier)),
-  bind('and', constant(optional(selector))),
-  map(({ identifier, and }) => RunoSelector(RunoSelectorKind.CLASS, identifier, and))
-);
-const attributeSelector: Parser<Char, RunoSelector> = between(char('['), char(']'))(pipe(
-  withTrim(identifier),
-  bindTo('key'),
-  andFirst(withTrim(char('='))),
-  bind('value', constant(withTrim(expression))),
-  bind('and', constant(optional(selector))),
-  map(({ key, value, and }) => RunoSelector(RunoSelectorKind.ATTRIBUTE, key, value, and))
-));
-
-function selector(i: Stream<Char>): ParseResult<Char, RunoSelector> {
-  const selector: Parser<Char, RunoSelector> = either(
-    idSelector,
-    constant(either(
-      classSelector,
-      constant(attributeSelector)
-    ))
-  );
-
-  return selector(i);
-}
-
 function expression(i: Stream<Char>): ParseResult<Char, RunoExpression> {
   const expression: Parser<Char, RunoExpression> = either(
     application,
@@ -232,7 +186,7 @@ function expression(i: Stream<Char>): ParseResult<Char, RunoExpression> {
             constant(
               either<Char, RunoExpression>(
                 literal,
-                constant(selector)
+                constant(reference)
               )
             )
           )
@@ -252,7 +206,7 @@ function nonCirculativeExpression(i: Stream<Char>): ParseResult<Char, RunoExpres
         constant(
           either<Char, RunoExpression>(
             literal,
-            constant(selector)
+            constant(reference)
           )
         )
       )
@@ -263,15 +217,15 @@ function nonCirculativeExpression(i: Stream<Char>): ParseResult<Char, RunoExpres
 }
 
 const flow: Parser<Char, RunoFlow> = pipe(
-  optional(selector),
+  optional(reference),
   bindTo('source'),
   bind('operations', constant(withTrim(between(char('{'), withTrim(char('}')))(many(pipe(withTrim(application), andFirst(withTrim(char(';'))))))))),
-  bind('destination', constant(optional(withTrim(selector)))),
+  bind('destination', constant(optional(withTrim(reference)))),
   map(({ source, operations, destination }) => RunoFlow(source, operations, destination))
 );
 
 const binding: Parser<Char, RunoBind> = pipe(
-  identifier,
+  name,
   bindTo('identifier'),
   andFirst(withTrim(char(':'))),
   bind('object', constant(withTrim(either<Char, RunoExpression | RunoFlow>(expression, constant(flow))))),
@@ -281,7 +235,7 @@ const binding: Parser<Char, RunoBind> = pipe(
 const termDefinition: Parser<Char, RunoTermDefinition> = pipe(
   string('Term'),
   bind('name', constant(withTrim(constantCaseIdentifier))),
-  bind('parameters', constant(sepBy(spaces, identifier))),
+  bind('parameters', constant(sepBy(spaces, name))),
   map(({ name, parameters }) => RunoTermDefinition(name, parameters))
 );
 
