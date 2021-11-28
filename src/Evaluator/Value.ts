@@ -53,6 +53,25 @@ export class RunoFunction {
   }
 }
 
+export class RunoExoticFunction {
+  callback: (...x: RunoValue[]) => RunoEvalResult;
+  length: number;
+  curriedArgs: RunoValue[];
+
+  constructor(callback: (...x: RunoValue[]) => RunoEvalResult, length: number, curriedArgs: RunoValue[] = []) {
+    this.callback = callback;
+    this.length = length;
+    this.curriedArgs = curriedArgs;
+  }
+
+  call(args: RunoValue[]): RunoEvalResult {
+    const composedArgs = this.curriedArgs.concat(args);
+
+    if (composedArgs.length < this.length) return new RunoExoticFunction(this.callback, this.length, composedArgs);
+    else return this.callback(...composedArgs);
+  }
+}
+
 const RunoCustomValueTag: unique symbol = Symbol('@RunoCustomValueTag');
 export type RunoCustomValue = { [RunoCustomValueTag]: typeof RunoCustomValueTag, tag: string, args: RunoValue[] };
 export class RunoConstructor {
@@ -66,7 +85,7 @@ export class RunoConstructor {
     this.curriedArgs = curriedArgs;
   }
 
-  construct(args: RunoValue[]): RunoEvalResult {
+  call(args: RunoValue[]): RunoEvalResult {
     const composedArgs = this.curriedArgs.concat(args);
 
     if (composedArgs.length < this.parameters.length) return new RunoConstructor(this.tag, this.parameters, composedArgs);
@@ -89,11 +108,16 @@ export function createCustomValue(tag: string, args: RunoValue[]): RunoCustomVal
   };
 }
 
+export function isRunoCallable(x: RunoValue): x is RunoFunction | RunoConstructor | RunoExoticFunction {
+  return x instanceof RunoFunction || x instanceof RunoExoticFunction || x instanceof RunoConstructor;
+}
+
 export type RunoEvent = Stream<RunoValue>;
 
 export type RunoObservable = Cell<RunoValue>;
 
-export type RunoValue = RunoNumber | RunoText | RunoBool | RunoTuple | RunoFunction | RunoConstructor | RunoEvent | RunoObservable | RunoCustomValue;
+export type RunoValue = RunoNumber | RunoText | RunoBool | RunoTuple | RunoFunction | RunoConstructor
+                        | RunoEvent | RunoObservable | RunoCustomValue | RunoExoticFunction;
 
 export function equals(x: RunoValue, y: RunoValue): boolean {
   if (x instanceof BigNumber && y instanceof BigNumber) return x.isEqualTo(y);

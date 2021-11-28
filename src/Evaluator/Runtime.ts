@@ -11,5 +11,8 @@ export function createError(message: string): RunoError {
 export function isRunoError(x: RunoValue | RunoError): x is RunoError {
   return typeof x === 'object' && Reflect.has(x, RunoErrorTag);
 }
+export function composeError(x: RunoError, y: RunoError): RunoError {
+  return createError(`${x.message} \n ${y.message}`);
+}
 
 export type RunoEvalResult = RunoValue | RunoError;
