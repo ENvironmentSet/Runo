@@ -50,8 +50,8 @@ export type RunoBind = { type: 'RunoBind', identifier: RunoName, object: RunoExp
 export function RunoBind(identifier: RunoName, object: RunoExpression | RunoFlow): RunoBind {
   return { type: 'RunoBind', identifier, object };
 }
-export type RunoFlow = { type: 'RunoFlow', source: Option<RunoReference>, operations: RunoFunctionApplication[], destination: Option<RunoReference> }
-export function RunoFlow(source: Option<RunoReference>, operations: RunoFunctionApplication[], destination: Option<RunoReference>): RunoFlow {
+export type RunoFlow = { type: 'RunoFlow', source: Option<RunoReference>, operations: RunoFunctionApplication[], destination: Option<RunoName> }
+export function RunoFlow(source: Option<RunoReference>, operations: RunoFunctionApplication[], destination: Option<RunoName>): RunoFlow {
   return { type: 'RunoFlow', source, operations, destination };
 }
 export type RunoTermDefinition = { type: 'RunoTermDefinition', name: RunoName, parameters: RunoName[] };

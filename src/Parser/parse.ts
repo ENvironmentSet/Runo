@@ -220,7 +220,7 @@ const flow: Parser<Char, RunoFlow> = pipe(
   optional(reference),
   bindTo('source'),
   bind('operations', constant(withTrim(between(char('{'), withTrim(char('}')))(many(pipe(withTrim(application), andFirst(withTrim(char(';'))))))))),
-  bind('destination', constant(optional(withTrim(reference)))),
+  bind('destination', constant(optional(withTrim(name)))),
   map(({ source, operations, destination }) => RunoFlow(source, operations, destination))
 );
 
