@@ -4,7 +4,7 @@ import {
   bindTo,
   chain,
   chainFirst,
-  either,
+  either, filter,
   many,
   many1,
   map,
@@ -61,6 +61,7 @@ const name: Parser<Char, RunoName> = pipe(
         map(chars => [head, ...chars].join(''))
       )
   ),
+  filter(str => !['if', 'then', 'else', 'match', 'with'].includes(str))
 );
 const reference: Parser<Char, RunoReference> = pipe(
   name,
@@ -160,7 +161,8 @@ const patternMatchCase: Parser<Char, RunoPatternMatchCase> = pipe(
 const patternMatch: Parser<Char, RunoPatternMatch> = pipe(
   string('match'),
   bind('target', constant(withTrim(expression))),
-  bind('cases', constant(many(patternMatchCase))),
+  andFirst(withTrim(string('with'))),
+  bind('cases', constant(many(withTrim(patternMatchCase)))),
   map(({ target, cases }) => RunoPatternMatch(target, cases))
 );
 
@@ -219,8 +221,9 @@ function nonCirculativeExpression(i: Stream<Char>): ParseResult<Char, RunoExpres
 const flow: Parser<Char, RunoFlow> = pipe(
   optional(reference),
   bindTo('source'),
-  bind('operations', constant(withTrim(between(char('{'), withTrim(char('}')))(many(pipe(withTrim(application), andFirst(withTrim(char(';'))))))))),
+  bind('operations', constant(withTrim(between(char('{'), withTrim(char('}')))(many(pipe(withTrim(application), andFirst(withTrim(char('.'))))))))),
   bind('destination', constant(optional(withTrim(name)))),
+  andFirst(withTrim(char('.'))),
   map(({ source, operations, destination }) => RunoFlow(source, operations, destination))
 );
 
@@ -229,13 +232,15 @@ const binding: Parser<Char, RunoBind> = pipe(
   bindTo('identifier'),
   andFirst(withTrim(char(':'))),
   bind('object', constant(withTrim(either<Char, RunoExpression | RunoFlow>(expression, constant(flow))))),
+  andFirst(withTrim(char('.'))),
   map(({ identifier, object }) => RunoBind(identifier, object))
 );
 
 const termDefinition: Parser<Char, RunoTermDefinition> = pipe(
   string('Term'),
   bind('name', constant(withTrim(constantCaseIdentifier))),
-  bind('parameters', constant(sepBy(spaces, name))),
+  bind('parameters', constant(withTrim(sepBy(spaces, name)))),
+  andFirst(withTrim(char('.'))),
   map(({ name, parameters }) => RunoTermDefinition(name, parameters))
 );
 
