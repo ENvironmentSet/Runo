@@ -156,6 +156,7 @@ const patternMatchCase: Parser<Char, RunoPatternMatchCase> = pipe(
   bind('parameters', constant(withTrim(sepBy(spaces, name)))),
   andFirst(withTrim(string('->'))),
   bind('body', constant(withTrim(expression))),
+  andFirst(withTrim(string('.'))),
   map(({ name, parameters, body }) => RunoPatternMatchCase(name, parameters, body))
 );
 const patternMatch: Parser<Char, RunoPatternMatch> = pipe(

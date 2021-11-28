@@ -11,12 +11,12 @@ identifier = `alphabet character` { `alphabet character` | `any digit` }
 reversedWord = if | then | else | match | with
 # identifier must not be reversedWord
 constant_case_identifier = `Uppercase alphabet character` { `alphabet character` | `any digit` }
-pattern_match_case = constant_case_identifier -> expression | constant_case_identifier identifier{space identifier} -> expression
+pattern_match_case = (constant_case_identifier -> expression | constant_case_identifier identifier{space identifier} -> expression).
 pattern_match = `match` expression with { pattern_match_case }
 if_then_else = `if` expression `then` expression `else` expression
 expression = literal | identifier | pattern_match | if_then_else | function_application
 comment = // { `any unicode character` }
 binding = identifier : (expression | flow).
-flow = [identifier] `{` { function_application `.` } `}` [identifier].
+flow = [identifier] `{` { function_application . } `}` [identifier].
 statement = comment | flow | term_definition | binding
 program = { statement }
