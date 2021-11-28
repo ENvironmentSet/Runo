@@ -1,5 +1,10 @@
 import { Cell, Stream } from 'sodiumjs';
 import { BigNumber } from 'bignumber.js';
+import { NonEmptyArray } from 'fp-ts/NonEmptyArray';
+import { RunoExpression, RunoName } from '../Parser/AST';
+import { Environment } from './Environment';
+import { RunoEvalResult } from './Runtime';
+import { evalExpression } from './expression';
 
 export type RunoNumber = BigNumber;
 
@@ -24,11 +29,55 @@ export function isRunoTuple(x: RunoValue): x is RunoTuple {
   return typeof x === 'object' && Reflect.has(x, RunoTupleTag);
 }
 
-export class RunoFunction {}
+export class RunoFunction {
+  env: Environment;
+  parameters: NonEmptyArray<RunoName>;
+  body: RunoExpression;
+  curriedArgs: RunoValue[];
+
+  constructor(env: Environment, parameters: NonEmptyArray<RunoName>, body: RunoExpression, curriedArgs: RunoValue[] = []) {
+    this.env = env;
+    this.parameters = parameters;
+    this.body = body;
+    this.curriedArgs = curriedArgs;
+  }
+
+  call(args: RunoValue[]): RunoEvalResult {
+    const composedArgs = this.curriedArgs.concat(args);
+
+    if (composedArgs.length < this.parameters.length) return new RunoFunction(this.env, this.parameters, this.body, composedArgs);
+    const matched: [string, RunoValue][] = this.parameters.map((name, i) => [name, composedArgs[i]]);
+    const newEnv = new Environment(Object.fromEntries(matched), this.env);
+
+    return evalExpression(newEnv, this.body);
+  }
+}
 
 const RunoCustomValueTag: unique symbol = Symbol('@RunoCustomValueTag');
 export type RunoCustomValue = { [RunoCustomValueTag]: typeof RunoCustomValueTag, tag: string, args: RunoValue[] };
-export class RunoConstructor {}
+export class RunoConstructor {
+  tag: string;
+  parameters: RunoName[];
+  curriedArgs: RunoValue[];
+
+  constructor(tag: string, parameters: RunoName[], curriedArgs: RunoValue[] = []) {
+    this.tag = tag;
+    this.parameters = parameters;
+    this.curriedArgs = curriedArgs;
+  }
+
+  construct(args: RunoValue[]): RunoEvalResult {
+    const composedArgs = this.curriedArgs.concat(args);
+
+    if (composedArgs.length < this.parameters.length) return new RunoConstructor(this.tag, this.parameters, composedArgs);
+
+    return {
+      [RunoCustomValueTag]: RunoCustomValueTag,
+      tag: this.tag,
+      args: composedArgs
+    };
+  }
+}
 export function isRunoCustomValue(x: RunoValue): x is RunoCustomValue {
   return typeof x === 'object' && Reflect.has(x, RunoCustomValueTag);
 }
