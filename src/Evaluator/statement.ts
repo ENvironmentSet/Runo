@@ -3,11 +3,35 @@ import { Environment } from './Environment';
 import { RunoBind, RunoFlow, RunoStatement, RunoTermDefinition } from '../Parser/AST';
 import { RunoConstructor } from './Value';
 import { evalExpression } from './expression';
-import { isNone } from 'fp-ts/Option';
+import { isNone, isSome } from 'fp-ts/Option';
 import { Cell, Stream } from 'sodiumjs';
 
 export function evalBind(env: Environment, { identifier, object }: RunoBind): RunoError | void {
-  if (object.type === 'RunoFlow') return createError('WIP1'); //@TODO
+  if (object.type === 'RunoFlow') {
+    if (isNone(object.source)) return createError('WIP1'); //@TODO
+
+    const src = evalExpression(env, object.source.value);
+
+    const result = object.operations.reduce<RunoEvalResult>((prev, op) => {
+      if (isRunoError(prev)) return prev;
+
+      const tempEnv = new Environment({ '0temp': prev }, env);
+
+      return evalExpression(tempEnv, {...op, arguments: [{ type: 'RunoReference', name: '0temp' }, ...op.arguments]});
+    }, src);
+
+    if (isRunoError(result)) return result;
+
+    env.createBinding(identifier, result);
+
+    if (isSome(object.destination)) {
+      const driver = env.resolveDriver(object.destination.value);
+
+      if (!(driver instanceof Function)) return driver;
+
+      if (result instanceof Cell || result instanceof Stream) result.listen(v => { if (!isRunoError(v)) driver(v); });
+    }
+  }
   else {
     const val = evalExpression(env, object);
 

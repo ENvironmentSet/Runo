@@ -7,7 +7,7 @@ import {
   RunoReference
 } from '../Parser/AST';
 import { composeError, createError, isRunoError, RunoEvalResult } from './Runtime';
-import { equals, isRunoCallable, isRunoCustomValue, RunoValue } from './Value';
+import { equals, isRunoCallable, isRunoCustomValue, RunoConstructor, RunoValue } from './Value';
 import { evalLiteral } from './literals';
 
 export function evalFunctionApplication(env: Environment, { head, arguments: args }: RunoFunctionApplication): RunoEvalResult {
@@ -23,11 +23,16 @@ export function evalFunctionApplication(env: Environment, { head, arguments: arg
 export function evalPatternMatch(env: Environment, { target, cases }: RunoPatternMatch): RunoEvalResult {
   const targetVal = evalExpression(env, target);
 
+  console.log(targetVal);
+
   if (isRunoError(targetVal)) return targetVal;
-  if (!isRunoCustomValue(targetVal)) return createError(`${targetVal} is not matchable`);
+  if (!isRunoCustomValue(targetVal) && !(targetVal instanceof RunoConstructor)) return createError(`${targetVal} is not matchable`);
 
   for (const { name, parameters, body } of cases) {
-    if (targetVal.tag === name) {
+    if (targetVal instanceof RunoConstructor && targetVal.tag === name) { //@TODO: Nonparam arg.
+      return evalExpression(env, body);
+    }
+    else if (isRunoCustomValue(targetVal) && targetVal.tag === name) {
       const newEnv = new Environment(Object.fromEntries(parameters.map((param, i) => [param, targetVal.args[i]])), env);
 
       return evalExpression(newEnv, body);

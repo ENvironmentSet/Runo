@@ -105,9 +105,9 @@ const tupleElement: Parser<Char, RunoTupleElement> = pipe(
     ))
   )
 );
-const tuple: Parser<Char, RunoTuple>
+const tuple: Parser<Char, RunoTuple> //@TODO: Tuple Syntax?
   = pipe(
-  between(char('('), char(')'))(sepBy(withTrim(char(',')), withTrim(tupleElement))),
+  between(char('['), withTrim(char(']')))(sepBy(withTrim(char(',')), withTrim(tupleElement))),
   map(RunoTuple)
 );
 
@@ -178,7 +178,7 @@ const ifThenElse: Parser<Char, RunoIfThenElse> = pipe(
 );
 
 function expression(i: Stream<Char>): ParseResult<Char, RunoExpression> {
-  const expression: Parser<Char, RunoExpression> = either(
+  const expression_: Parser<Char, RunoExpression> = either(
     application,
     constant(
       either(
@@ -187,9 +187,14 @@ function expression(i: Stream<Char>): ParseResult<Char, RunoExpression> {
           either(
             ifThenElse,
             constant(
-              either<Char, RunoExpression>(
+              either(
                 literal,
-                constant(reference)
+                constant(
+                  either<Char, RunoExpression>(
+                    reference,
+                    constant(between(char('('), withTrim(char(')')))(withTrim(expression)))
+                  )
+                )
               )
             )
           )
@@ -198,7 +203,7 @@ function expression(i: Stream<Char>): ParseResult<Char, RunoExpression> {
     )
   );
 
-  return expression(i);
+  return expression_(i);
 }
 function nonCirculativeExpression(i: Stream<Char>): ParseResult<Char, RunoExpression> {
   const nonCirculativeExpression: Parser<Char, RunoExpression> = either(
@@ -209,7 +214,12 @@ function nonCirculativeExpression(i: Stream<Char>): ParseResult<Char, RunoExpres
         constant(
           either<Char, RunoExpression>(
             literal,
-            constant(reference)
+            constant(
+              either<Char, RunoExpression>(
+                reference,
+                constant(between(char('('), withTrim(char(')')))(withTrim(expression)))
+              )
+            )
           )
         )
       )
