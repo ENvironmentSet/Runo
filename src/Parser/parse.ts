@@ -4,7 +4,7 @@ import {
   bindTo,
   chain,
   chainFirst, cut,
-  either, eof, filter,
+  either, filter,
   many,
   many1,
   map,
@@ -256,8 +256,7 @@ const statement: Parser<Char, RunoStatement> = either(
 );
 export const parse: Parser<Char, RunoProgram> = cut(pipe(
   many(withTrim(statement)),
-  andFirst(spaces),
-  andFirst(eof())
+  andFirst(spaces)
 ));
 
 // every parser assume that it's forward spaces are removed
