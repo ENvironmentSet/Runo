@@ -232,7 +232,7 @@ const binding: Parser<Char, RunoBind> = pipe(
   name,
   bindTo('identifier'),
   andFirst(withTrim(char(':'))),
-  bind('object', constant(withTrim(either<Char, RunoExpression | RunoFlow>(expression, constant(flow))))),
+  bind('object', constant(withTrim(either<Char, RunoExpression | RunoFlow>(flow, constant(expression))))),
   andFirst(withTrim(char('.'))),
   map(({ identifier, object }) => RunoBind(identifier, object))
 );
