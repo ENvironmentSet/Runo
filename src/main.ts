@@ -19,7 +19,7 @@ import BigNumber from 'bignumber.js';
 const board = new Board();
 
 function toPinNum(x: string): number {
-  return Number(/[da](\d)/.exec(x)![1]);
+  return Number(/[da](\d+)/.exec(x)![1]);
 }
 
 board.on('ready', async () => {
@@ -142,7 +142,7 @@ board.on('ready', async () => {
     } else {
       //@ts-ignore
       drivers[pin] = (x: RunoValue) => {
-        if (!isRunoCustomValue(x)) return;
+        if (!(x instanceof RunoConstructor)) return;
 
         if (x.tag === 'LOW') pinInstance.low();
         if (x.tag === 'HIGH') pinInstance.high();
