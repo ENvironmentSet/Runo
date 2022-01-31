@@ -1,2 +1,3 @@
 # Runo
-Runo is Reactive DSL to program Arduino uno.
+
+A compact, yet extensible programming language for functional-reactive programming
