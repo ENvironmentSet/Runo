@@ -163,7 +163,7 @@ const patternMatch: Parser<Char, RunoPatternMatch> = pipe(
   string('match'),
   bind('target', constant(withTrim(expression))),
   andFirst(withTrim(string('with'))),
-  bind('cases', constant(many(withTrim(patternMatchCase)))),
+  bind('cases', constant(many1(withTrim(patternMatchCase)))),
   map(({ target, cases }) => RunoPatternMatch(target, cases))
 );
 
