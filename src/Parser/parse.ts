@@ -42,15 +42,16 @@ import { Stream } from 'parser-ts/Stream';
 import { ParseResult } from 'parser-ts/ParseResult';
 
 //@NOTE: every parser assumes that heading spaces are removed
-//@NOTE: lambda expression is right associative
 
-const and: <I, A, B>(parser: Parser<I, B>) => (_: Parser<I, A>) => Parser<I, B> = parser => chain(constant(parser));
-const andFirst: <I, A, B>(parser: Parser<I, B>) => (_: Parser<I, A>) => Parser<I, A> = parser => chainFirst(constant(parser));
+const and: <I, A, B>(parser: Parser<I, B>) => (_: Parser<I, A>) => Parser<I, B>
+  = parser => chain(constant(parser));
+const andFirst: <I, A, B>(parser: Parser<I, B>) => (_: Parser<I, A>) => Parser<I, A>
+  = parser => chainFirst(constant(parser));
 
 const withTrim: <A>(parser: Parser<Char, A>) => Parser<Char, A> = parser => pipe(
-  spaces,
-  and(parser)
-);
+    spaces,
+    and(parser)
+  );
 
 const alphabet: Parser<Char, Char> = either(
   lower,
@@ -59,10 +60,10 @@ const alphabet: Parser<Char, Char> = either(
 const name: Parser<Char, RunoName> = pipe(
   alphabet,
   chain(head =>
-      pipe(
-        many(alphanum),
-        map(chars => [head, ...chars].join(''))
-      )
+    pipe(
+      many(alphanum),
+      map(chars => [head, ...chars].join(''))
+    )
   ),
   filter(str => !['if', 'then', 'else', 'match', 'with'].includes(str))
 );
@@ -114,6 +115,7 @@ const tuple: Parser<Char, RunoTuple> //@TODO: Tuple Syntax?
   map(RunoTuple)
 );
 
+//@NOTE: lambda expressions are right associative
 const lambda: Parser<Char, RunoLambda> = pipe(
   char('\\'),
   bind('parameters', constant(many1(withTrim(name)))),
