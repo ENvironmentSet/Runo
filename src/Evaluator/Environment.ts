@@ -12,12 +12,10 @@ export class Environment {
     this.drivers = new Map(Object.entries(drivers));
   }
 
-  createBinding(id: string, value: RunoValue): RunoEvalResult {
+  createBinding(id: string, value: RunoValue): RunoError | void {
     if (this.bindings.has(id)) return createError(`cannot redefine binding "${id}"`);
 
     this.bindings.set(id, value);
-
-    return value;
   }
 
   resolve(id: string): RunoEvalResult {
@@ -30,5 +28,11 @@ export class Environment {
     if (this.drivers.has(name)) return this.drivers.get(name)!;
     else if (this.parent) return this.parent.resolveDriver(name);
     else return createError(`cannot resolve binding "${name}"`);
+  }
+
+  createDriver(name: string, driver: (x: RunoValue) => void): RunoError | void {
+    if (this.drivers.has(name)) return createError(`cannot redefine driver "${name}"`);
+
+    this.drivers.set(name, driver);
   }
 }

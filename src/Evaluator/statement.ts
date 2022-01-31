@@ -1,35 +1,64 @@
-import { createError, isRunoError, RunoError, RunoEvalResult } from './Runtime';
+import { isRunoError, RunoError, RunoEvalResult } from './Runtime';
 import { Environment } from './Environment';
 import { RunoBind, RunoFlow, RunoStatement, RunoTermDefinition } from '../Parser/AST';
-import { RunoConstructor } from './Value';
+import { RunoConstructor, RunoExoticFunction } from './Value';
 import { evalExpression } from './expression';
 import { isNone, isSome } from 'fp-ts/Option';
 import { Cell, Stream } from 'sodiumjs';
 
 export function evalBind(env: Environment, { identifier, object }: RunoBind): RunoError | void {
   if (object.type === 'RunoFlow') {
-    if (isNone(object.source)) return createError('WIP1'); //@TODO
+    if (isNone(object.source)) {
+      if (isSome(object.destination)) {
+        const driver = env.resolveDriver(object.destination.value);
 
-    const src = evalExpression(env, object.source.value);
+        if (!(driver instanceof Function)) return driver;
 
-    const result = object.operations.reduce<RunoEvalResult>((prev, op) => {
-      if (isRunoError(prev)) return prev;
+        return env.createDriver(identifier, value => {
+          const result = object.operations.reduce<RunoEvalResult>((prev, op) => {
+            if (isRunoError(prev)) return prev;
 
-      const tempEnv = new Environment({ '0temp': prev }, env);
+            const tempEnv = new Environment({ '0temp': prev }, env);
 
-      return evalExpression(tempEnv, {...op, arguments: [{ type: 'RunoReference', name: '0temp' }, ...op.arguments]});
-    }, src);
+            return evalExpression(tempEnv, {...op, arguments: [{ type: 'RunoReference', name: '0temp' }, ...op.arguments]});
+          }, value);
 
-    if (isRunoError(result)) return result;
+          if (result instanceof Cell || result instanceof Stream) result.listen(v => { if (!isRunoError(v)) driver(v); });
+        })
+      } else {
+        return env.createBinding(identifier, new RunoExoticFunction(value => {
+          return object.operations.reduce<RunoEvalResult>((prev, op) => {
+            if (isRunoError(prev)) return prev;
 
-    env.createBinding(identifier, result);
+            const tempEnv = new Environment({ '0temp': prev }, env);
 
-    if (isSome(object.destination)) {
-      const driver = env.resolveDriver(object.destination.value);
+            return evalExpression(tempEnv, {...op, arguments: [{ type: 'RunoReference', name: '0temp' }, ...op.arguments]});
+          }, value);
+        }, 1));
+      }
+    } else {
 
-      if (!(driver instanceof Function)) return driver;
+      const src = evalExpression(env, object.source.value);
 
-      if (result instanceof Cell || result instanceof Stream) result.listen(v => { if (!isRunoError(v)) driver(v); });
+      const result = object.operations.reduce<RunoEvalResult>((prev, op) => {
+        if (isRunoError(prev)) return prev;
+
+        const tempEnv = new Environment({ '0temp': prev }, env);
+
+        return evalExpression(tempEnv, {...op, arguments: [{ type: 'RunoReference', name: '0temp' }, ...op.arguments]});
+      }, src);
+
+      if (isRunoError(result)) return result;
+
+      if (isSome(object.destination)) {
+        const driver = env.resolveDriver(object.destination.value);
+
+        if (!(driver instanceof Function)) return driver;
+
+        if (result instanceof Cell || result instanceof Stream) result.listen(v => { if (!isRunoError(v)) driver(v); });
+      }
+
+      return env.createBinding(identifier, result);
     }
   }
   else {
@@ -41,7 +70,7 @@ export function evalBind(env: Environment, { identifier, object }: RunoBind): Ru
 }
 
 export function evalFlow(env: Environment, { source, destination, operations }: RunoFlow): RunoError | void {
-  if (isNone(source) || isNone(destination)) return createError('WIP2'); //@TODO
+  if (isNone(source) || isNone(destination)) return;
 
   const src = evalExpression(env, source.value);
   const driver = env.resolveDriver(destination.value);
@@ -64,9 +93,7 @@ export function evalFlow(env: Environment, { source, destination, operations }: 
 export function evalTermDefinition(env: Environment, { name, parameters }: RunoTermDefinition): RunoError | void {
   const newConstructor = new RunoConstructor(name, parameters);
 
-  const r = env.createBinding(name, newConstructor);
-
-  if (isRunoError(r)) return r;
+  return env.createBinding(name, newConstructor);
 }
 
 export function evalStatement(env: Environment, ast: RunoStatement): RunoError | void {

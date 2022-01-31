@@ -3,7 +3,7 @@ import { BigNumber } from 'bignumber.js';
 import { NonEmptyArray } from 'fp-ts/NonEmptyArray';
 import { RunoExpression, RunoName } from '../Parser/AST';
 import { Environment } from './Environment';
-import { RunoEvalResult } from './Runtime';
+import { isRunoError, RunoEvalResult } from './Runtime';
 import { evalExpression } from './expression';
 
 export type RunoNumber = BigNumber;
@@ -46,10 +46,20 @@ export class RunoFunction {
     const composedArgs = this.curriedArgs.concat(args);
 
     if (composedArgs.length < this.parameters.length) return new RunoFunction(this.env, this.parameters, this.body, composedArgs);
-    const matched: [string, RunoValue][] = this.parameters.map((name, i) => [name, composedArgs[i]]);
-    const newEnv = new Environment(Object.fromEntries(matched), this.env);
+    else if (composedArgs.length > this.parameters.length) {
+      const left = composedArgs.slice(this.parameters.length);
+      const matched: [string, RunoValue][] = this.parameters.map((name, i) => [name, composedArgs[i]]);
+      const newEnv = new Environment(Object.fromEntries(matched), this.env);
+      const result = evalExpression(newEnv, this.body);
 
-    return evalExpression(newEnv, this.body);
+      if (!isRunoError(result) && isRunoCallable(result)) return result.call(left);
+      else return result;
+    } else {
+      const matched: [string, RunoValue][] = this.parameters.map((name, i) => [name, composedArgs[i]]);
+      const newEnv = new Environment(Object.fromEntries(matched), this.env);
+
+      return evalExpression(newEnv, this.body);
+    }
   }
 }
 
@@ -68,6 +78,14 @@ export class RunoExoticFunction {
     const composedArgs = this.curriedArgs.concat(args);
 
     if (composedArgs.length < this.length) return new RunoExoticFunction(this.callback, this.length, composedArgs);
+    else if (composedArgs.length > this.length) {
+      const left = composedArgs.slice(this.length);
+      const result = this.callback(...composedArgs);
+
+      if (isRunoError(result) || !isRunoCallable(result)) return result;
+
+      return result.call(left);
+    }
     else return this.callback(...composedArgs);
   }
 }
