@@ -41,6 +41,9 @@ import { spaces, string } from 'parser-ts/string';
 import { Stream } from 'parser-ts/Stream';
 import { ParseResult } from 'parser-ts/ParseResult';
 
+//@NOTE: every parser assumes that heading spaces are removed
+//@NOTE: lambda expression is right associative
+
 const and: <I, A, B>(parser: Parser<I, B>) => (_: Parser<I, A>) => Parser<I, B> = parser => chain(constant(parser));
 const andFirst: <I, A, B>(parser: Parser<I, B>) => (_: Parser<I, A>) => Parser<I, A> = parser => chainFirst(constant(parser));
 
@@ -268,6 +271,3 @@ export const parse: Parser<Char, RunoProgram> = cut(pipe(
   many(withTrim(statement)),
   andFirst(spaces)
 ));
-
-// every parser assume that it's forward spaces are removed
-// \x -> \y -> x y (lambda is right-assoc)
