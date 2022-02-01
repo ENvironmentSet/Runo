@@ -1,0 +1,9 @@
+id : \x -> x.
+one : id 1.
+
+binaryF : \x -> y -> x.
+partial : binaryF 2.
+two : partial 1.
+
+constant : 1 1.
+constant2 : 1 2 3.
