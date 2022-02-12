@@ -7,7 +7,7 @@ export class Environment {
   parent?: Environment;
 
   constructor(predefined: Record<string, RunoValue>, parent?: Environment, drivers: Record<string, (x: RunoValue) => void> = {}) {
-    this.bindings = new Map(Object.entries(predefined).concat([['True', true], ['False', false]]));
+    this.bindings = new Map(Object.entries(predefined));
     this.parent = parent;
     this.drivers = new Map(Object.entries(drivers));
   }
