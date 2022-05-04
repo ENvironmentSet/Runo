@@ -8,8 +8,8 @@ literal = number | text  | tuple | lambda
 function_application = expression expression {expression}
 term_definition = ( Term constant_case_identifier | Term constant_case_identifier identifier{space identifier} ).
 identifier = `alphabet character` { `alphabet character` | `any digit` }
-reversedWord = if | then | else | match | with
-# identifier must not be reversedWord
+reservedWord = if | then | else | match | with
+# identifier must not be reservedWord
 constant_case_identifier = `Uppercase alphabet character` { `alphabet character` | `any digit` }
 pattern_match_case = (constant_case_identifier -> expression | constant_case_identifier identifier{space identifier} -> expression).
 pattern_match = `match` expression `with` pattern_match_case { pattern_match_case }
