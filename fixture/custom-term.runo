@@ -1,7 +1,0 @@
-Term Nil.
-Term Cons car cdr.
-
-map : \f l -> match l with
-                        Nil -> Nil.
-                        Cons car cdr -> Cons (f car) (map f cdr).
-              .

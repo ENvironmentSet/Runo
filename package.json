@@ -1,9 +1,14 @@
 {
-  "name": "rex",
+  "name": "runo",
   "private": true,
   "scripts": {
-    "build": "tsc",
     "test": "jest"
+  },
+  "jest": {
+    "transform": {
+      "verbose": true,
+      "^.+\\.ts$": "ts-jest"
+    }
   },
   "repository": {
     "type": "git",
@@ -12,21 +17,18 @@
   "author": "ENvironmentSet",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ENvironmentSet/ReX/issues"
+    "url": "https://github.com/ENvironmentSet/Runo/issues"
   },
-  "homepage": "https://github.com/ENvironmentSet/ReX#readme",
+  "homepage": "https://github.com/ENvironmentSet/Runo#readme",
   "devDependencies": {
-    "@types/jest": "^26.0.24",
-    "@types/johnny-five": "^1.3.2",
-    "jest": "^27.0.6",
-    "ts-jest": "^27.0.3",
-    "typescript": "^4.3.5"
+    "@types/jest": "^28.1.7",
+    "bun-types": "^0.1.8",
+    "jest": "^28.1.3",
+    "ts-jest": "^28.0.8"
   },
   "dependencies": {
-    "bignumber.js": "^9.0.1",
-    "fp-ts": "^2.11.5",
-    "johnny-five": "^2.1.0",
-    "parser-ts": "^0.6.15",
+    "fp-ts": "^2.12.2",
+    "parser-ts": "^0.6.16",
     "sodiumjs": "^3.0.7"
   }
 }

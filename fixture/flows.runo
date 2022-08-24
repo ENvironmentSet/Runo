@@ -1,8 +1,0 @@
-stdin {} stdout.
-
-main : stdin { mapTo 1. } stdout..
-
-composed : { f. g. }
-
-customSource : stdin { h. }..
-customDriver : { h. } stdout..

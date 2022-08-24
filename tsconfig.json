@@ -2,17 +2,18 @@
   "compilerOptions": {
     "lib": ["esnext"],
     "module": "es6",
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitThis": true,
+    "noImplicitAny": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "removeComments": true,
     "strict": true,
     "target": "esnext",
-    "sourceMap": true,
-    "moduleResolution": "node",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationDir": "dist/types"
+    "types": ["bun-types"]
   },
   "include": [
     "src/**/*"
@@ -21,10 +22,5 @@
     "**/*.test.ts",
     "node_modules",
     "dist"
-  ],
-  "ts-node": {
-    "compilerOptions": {
-      "module": "commonjs"
-    }
-  }
+  ]
 }
